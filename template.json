@@ -1,0 +1,195 @@
+{
+  "name": "GitLab CE 19 DevOps Platform",
+  "description": "Self-hosted Git, merge requests, issues and wiki. Own your code.",
+  "category": "Other",
+  "tags": [
+    "gitlab",
+    "git",
+    "devops",
+    "ci-cd",
+    "code-review",
+    "issue-tracker",
+    "self-hosted"
+  ],
+  "image": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/gitlab.svg",
+  "upstream": {
+    "repo": "gitlab-org/omnibus-gitlab",
+    "version": "19.4.1-ce.0",
+    "checked": "2026-10-11"
+  },
+  "services": {
+    "GitLab": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/gitlab.svg",
+      "source": {
+        "repo": "baranberkay96/gitlab-railway",
+        "rootDirectory": "/services/gitlab"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/users/sign_in",
+      "healthcheckTimeout": 1800,
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10,
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": true,
+      "targetPort": 80,
+      "tcpProxy": {
+        "port": 22
+      },
+      "volume": {
+        "mountPath": "/var/opt/gitlab"
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "80",
+          "description": "Port GitLab's bundled nginx listens on; Railway routes the public domain and its healthcheck here.",
+          "required": false
+        },
+        "GITLAB_HOST": {
+          "defaultValue": "${{RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "Host name in GitLab's external URL (https://...). Change it to your custom domain after adding one, then redeploy.",
+          "required": false
+        },
+        "GITLAB_ROOT_PASSWORD": {
+          "defaultValue": "${{secret(24)}}",
+          "description": "Password of the 'root' administrator, applied once when the database is created. Change it in GitLab afterwards.",
+          "required": false
+        },
+        "GITLAB_RUNNER_BOOTSTRAP_TOKEN": {
+          "defaultValue": "${{secret(40)}}",
+          "description": "One-time token (create_runner scope only, 30-day expiry) that GitLab creates for root so the GitLab Runner service can register itself. The runner revokes it after use. Clear it to disable automatic runner registration.",
+          "required": false
+        },
+        "GITLAB_PUMA_WORKERS": {
+          "defaultValue": "2",
+          "description": "Puma web worker processes (~600-900 MB each). 0 = single process for very small instances.",
+          "required": false
+        },
+        "GITLAB_PUMA_THREADS": {
+          "defaultValue": "4",
+          "description": "Threads per Puma worker.",
+          "required": false
+        },
+        "GITLAB_SIDEKIQ_CONCURRENCY": {
+          "defaultValue": "10",
+          "description": "Sidekiq background job threads (GitLab default 20).",
+          "required": false
+        },
+        "GITLAB_POSTGRES_SHARED_BUFFERS": {
+          "defaultValue": "256MB",
+          "description": "shared_buffers of the bundled PostgreSQL. Raise it with the service's memory.",
+          "required": false
+        },
+        "GITLAB_PROMETHEUS_ENABLED": {
+          "defaultValue": "false",
+          "description": "Run the bundled Prometheus, Alertmanager and exporters (about 300 MB extra).",
+          "required": false
+        },
+        "GITLAB_KAS_ENABLED": {
+          "defaultValue": "false",
+          "description": "Run the GitLab agent server for Kubernetes (KAS), served under /-/kubernetes-agent/ on the same domain.",
+          "required": false
+        },
+        "SMTP_ADDRESS": {
+          "defaultValue": "",
+          "description": "Optional SMTP server for e-mail (notifications, password resets). Leave empty to disable e-mail. Outbound SMTP needs Railway Pro.",
+          "required": false
+        },
+        "SMTP_PORT": {
+          "defaultValue": "587",
+          "description": "SMTP port (587 STARTTLS, 465 implicit TLS).",
+          "required": false
+        },
+        "SMTP_USER": {
+          "defaultValue": "",
+          "description": "SMTP user name.",
+          "required": false
+        },
+        "SMTP_PASSWORD": {
+          "defaultValue": "",
+          "description": "SMTP password.",
+          "required": false
+        },
+        "GITLAB_EMAIL_FROM": {
+          "defaultValue": "",
+          "description": "Sender address for GitLab e-mails, e.g. gitlab@{your-domain}.",
+          "required": false
+        },
+        "GITLAB_OMNIBUS_CONFIG": {
+          "defaultValue": "",
+          "description": "Optional extra gitlab.rb Ruby lines, applied after the template's settings (e.g. registry or OmniAuth configuration).",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "120",
+          "description": "Time for 'gitlab-ctl stop' to shut down PostgreSQL and the other components cleanly on redeploy.",
+          "required": false
+        }
+      }
+    },
+    "GitLab Runner": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/gitlab.svg",
+      "source": {
+        "repo": "baranberkay96/gitlab-railway",
+        "rootDirectory": "/services/gitlab-runner"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": null,
+      "healthcheckTimeout": null,
+      "restartPolicyType": "ALWAYS",
+      "restartPolicyMaxRetries": null,
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/etc/gitlab-runner"
+      },
+      "variables": {
+        "GITLAB_INTERNAL_URL": {
+          "defaultValue": "http://${{GitLab.RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "GitLab URL on the private network; used for the API, job traffic and git clones.",
+          "required": false
+        },
+        "GITLAB_RUNNER_BOOTSTRAP_TOKEN": {
+          "defaultValue": "${{GitLab.GITLAB_RUNNER_BOOTSTRAP_TOKEN}}",
+          "description": "Token used once to create and register an instance runner automatically, then revoked.",
+          "required": false
+        },
+        "GITLAB_RUNNER_TOKEN": {
+          "defaultValue": "",
+          "description": "Optional runner authentication token (glrt-...) from Admin > CI/CD > Runners > New instance runner. Takes precedence over the bootstrap token.",
+          "required": false
+        },
+        "GITLAB_RUNNER_CONCURRENT": {
+          "defaultValue": "2",
+          "description": "Jobs this runner executes at the same time.",
+          "required": false
+        },
+        "GITLAB_RUNNER_TAGS": {
+          "defaultValue": "railway,shell",
+          "description": "Tags of the automatically created runner (comma separated).",
+          "required": false
+        },
+        "GITLAB_RUNNER_RUN_UNTAGGED": {
+          "defaultValue": "true",
+          "description": "Let the automatically created runner pick up jobs without tags.",
+          "required": false
+        },
+        "GITLAB_RUNNER_DESCRIPTION": {
+          "defaultValue": "Railway shell runner",
+          "description": "Description of the automatically created runner in GitLab.",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "30",
+          "description": "Grace period on redeploy.",
+          "required": false
+        }
+      }
+    }
+  }
+}
